@@ -1,0 +1,51 @@
+Eve Auth JWT
+============
+
+.. image:: https://img.shields.io/pypi/v/eve-auth-jwt.svg
+    :target: https://pypi.python.org/pypi/eve-auth-jwt
+
+.. image:: https://travis-ci.org/rs/eve-auth-jwt.svg?branch=master
+    :target: https://travis-ci.org/rs/eve-auth-jwt
+
+An OAuth 2 JWT token validation module for `Eve <http://python-eve.org>`_.
+
+Installation
+------------
+
+To install eve-auth-jwt, simply:
+
+    $ pip install eve-auth-jwt
+
+At Eve initialization::
+
+    from eve import Eve
+    from eve_auth_jwt import JWTAuth
+
+    app = Eve(auth=JWTAuth, settings=SETTINGS)
+
+Configuration
+-------------
+
+This module reads its configuration form Eve settings. Here is the list of new directives:
+
+* ``JWT_SECRET`` (required): Defines the symetric secret token secret used to de/encode the token (async keys support is a TODO).
+* ``JWT_ISSUER`` (required): Defines the required token issuer (``iss`` claim).
+* ``JWT_AUDIENCES``: Defines a list of accepted audiences (``aud`` claim). If not provided, only tokens with no audience set will be accepted.
+* ``JWT_ROLES_CLAIM``: Defines the claim name for roles. If set, Eve roles check will be activated, and any resources with ``allowed_roles`` set will require to have those roles present in the defined token's claim.
+* ``JWT_SCOPE_CLAIM``: Defines the claim name for scope. If set and the token has a claim of the same name containing the string ``viewer``, only ``GET`` and ``HEAD`` methods will be granted. All other values are ignored and added to the list of exposed roles with the ``scope:`` prefix.
+
+Reading Roles
+-------------
+
+If access is granted, the authentication module exposes roles and token's claims thru ``get_authen_roles()`` and ``get_authen_claims()`` methods. You may access those values from your event hook as follow::
+
+    def my_hook(...)
+        resource_def = app.config['DOMAIN'][resource_name]
+        auth = resource_def['authentication']
+        if 'somerole' in auth.get_authen_roles():
+            # grant some finer access
+
+Licenses
+--------
+
+All source code is licensed under the `MIT License <https://raw.githubusercontent.com/rs/eve-auth-jwt/master/LICENSE>`_.
