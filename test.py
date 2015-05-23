@@ -49,7 +49,7 @@ class TestBase(unittest.TestCase):
                   'aud': 'aud1',
                   'sub': '0123456789abcdef01234567'}
         token = jwt.encode(claims, 'secret')
-        auth = [('Authorization', 'Bearer %s' % token)]
+        auth = [('Authorization', 'Bearer {}'.format(token.decode('utf-8')))]
         r = self.test_client.get('/foo', headers=auth)
         self.assertEqual(r.status_code, 200)
 
@@ -58,7 +58,7 @@ class TestBase(unittest.TestCase):
                   'aud': 'aud1',
                   'sub': '0123456789abcdef01234567'}
         token = jwt.encode(claims, 'secret')
-        r = self.test_client.get('/foo?access_token=%s' % token)
+        r = self.test_client.get('/foo?access_token={}'.format(token.decode('utf-8')))
         self.assertEqual(r.status_code, 200)
 
     def test_token_claims_context(self):
@@ -67,7 +67,7 @@ class TestBase(unittest.TestCase):
                   'sub': '0123456789abcdef01234567'}
         token = jwt.encode(claims, 'secret')
         with self.app.test_client() as client:
-            client.get('/foo?access_token=%s' % token)
+            client.get('/foo?access_token={}'.format(token.decode('utf-8')))
             self.assertEqual(g.get('authen_claims'), claims)
 
     def test_invalid_token_secret(self):
@@ -75,14 +75,14 @@ class TestBase(unittest.TestCase):
                   'aud': 'aud1',
                   'sub': '0123456789abcdef01234567'}
         token = jwt.encode(claims, 'invalid secret')
-        r = self.test_client.get('/foo?access_token=%s' % token)
+        r = self.test_client.get('/foo?access_token={}'.format(token.decode('utf-8')))
         self.assertEqual(r.status_code, 401)
 
     def test_missing_token_subject(self):
         claims = {'iss': 'https://domain.com/token',
                   'aud': 'aud1'}
         token = jwt.encode(claims, 'secret')
-        r = self.test_client.get('/foo?access_token=%s' % token)
+        r = self.test_client.get('/foo?access_token={}'.format(token.decode('utf-8')))
         self.assertEqual(r.status_code, 401)
 
     def test_invalid_token_issuer(self):
@@ -90,7 +90,7 @@ class TestBase(unittest.TestCase):
                   'aud': 'aud1',
                   'sub': '0123456789abcdef01234567'}
         token = jwt.encode(claims, 'secret')
-        r = self.test_client.get('/foo?access_token=%s' % token)
+        r = self.test_client.get('/foo?access_token={}'.format(token.decode('utf-8')))
         self.assertEqual(r.status_code, 401)
 
     def test_invalid_token_audience(self):
@@ -98,7 +98,7 @@ class TestBase(unittest.TestCase):
                   'aud': 'aud2',
                   'sub': '0123456789abcdef01234567'}
         token = jwt.encode(claims, 'secret')
-        r = self.test_client.get('/foo?access_token=%s' % token)
+        r = self.test_client.get('/foo?access_token={}'.format(token.decode('utf-8')))
         self.assertEqual(r.status_code, 401)
 
     def test_valid_token_resource_audience(self):
@@ -106,7 +106,7 @@ class TestBase(unittest.TestCase):
                   'aud': 'aud2',
                   'sub': '0123456789abcdef01234567'}
         token = jwt.encode(claims, 'secret')
-        r = self.test_client.get('/bar?access_token=%s' % token)
+        r = self.test_client.get('/bar?access_token={}'.format(token.decode('utf-8')))
         self.assertEqual(r.status_code, 200)
 
     def test_invalid_token_resource_audience(self):
@@ -114,7 +114,7 @@ class TestBase(unittest.TestCase):
                   'aud': 'aud1',
                   'sub': '0123456789abcdef01234567'}
         token = jwt.encode(claims, 'secret')
-        r = self.test_client.get('/bar?access_token=%s' % token)
+        r = self.test_client.get('/bar?access_token={}'.format(token.decode('utf-8')))
         self.assertEqual(r.status_code, 401)
 
     def test_valid_token_role(self):
@@ -123,7 +123,7 @@ class TestBase(unittest.TestCase):
                   'sub': '0123456789abcdef01234567',
                   'roles': ['role']}
         token = jwt.encode(claims, 'secret')
-        r = self.test_client.get('/baz?access_token=%s' % token)
+        r = self.test_client.get('/baz?access_token={}'.format(token.decode('utf-8')))
         self.assertEqual(r.status_code, 200)
 
     def test_invalid_token_role(self):
@@ -131,7 +131,7 @@ class TestBase(unittest.TestCase):
                   'aud': 'aud1',
                   'sub': '0123456789abcdef01234567'}
         token = jwt.encode(claims, 'secret')
-        r = self.test_client.get('/baz?access_token=%s' % token)
+        r = self.test_client.get('/baz?access_token={}'.format(token.decode('utf-8')))
         self.assertEqual(r.status_code, 401)
 
     def test_token_role_context(self):
@@ -141,7 +141,7 @@ class TestBase(unittest.TestCase):
                   'roles': ['role']}
         token = jwt.encode(claims, 'secret')
         with self.app.test_client() as client:
-            client.get('/baz?access_token=%s' % token)
+            client.get('/baz?access_token={}'.format(token.decode('utf-8')))
             self.assertEqual(g.get('authen_roles'), ['role'])
 
     def test_token_scope(self):
@@ -150,7 +150,7 @@ class TestBase(unittest.TestCase):
                   'sub': '0123456789abcdef01234567',
                   'scope': 'user'}
         token = jwt.encode(claims, 'secret')
-        r = self.test_client.get('/foo?access_token=%s' % token)
+        r = self.test_client.get('/foo?access_token={}'.format(token.decode('utf-8')))
         self.assertEqual(r.status_code, 200)
 
     def test_token_scope_viewer_read(self):
@@ -159,7 +159,7 @@ class TestBase(unittest.TestCase):
                   'sub': '0123456789abcdef01234567',
                   'scope': 'viewer'}
         token = jwt.encode(claims, 'secret')
-        r = self.test_client.get('/foo?access_token=%s' % token)
+        r = self.test_client.get('/foo?access_token={}'.format(token.decode('utf-8')))
         self.assertEqual(r.status_code, 200)
 
     def test_token_scope_viewer_write(self):
@@ -168,7 +168,7 @@ class TestBase(unittest.TestCase):
                   'sub': '0123456789abcdef01234567',
                   'scope': 'viewer'}
         token = jwt.encode(claims, 'secret')
-        r = self.test_client.post('/foo?access_token=%s' % token)
+        r = self.test_client.post('/foo?access_token={}'.format(token.decode('utf-8')))
         self.assertEqual(r.status_code, 401)
 
 if __name__ == '__main__':
