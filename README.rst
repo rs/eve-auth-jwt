@@ -30,7 +30,7 @@ This module reads its configuration form Eve settings. Here is the list of new d
 
 * ``JWT_SECRET`` (required): Defines the symetric secret token secret used to de/encode the token (async keys support is a TODO).
 * ``JWT_ISSUER`` (required): Defines the required token issuer (``iss`` claim).
-* ``JWT_AUDIENCES``: Defines a list of accepted audiences (``aud`` claim). If not provided, only tokens with no audience set will be accepted.
+* ``JWT_AUDIENCES``: Defines a list of accepted audiences (``aud`` claim). If not provided, only tokens with no audience set will be accepted. The resource level ``audiences`` parameter is also available.
 * ``JWT_ROLES_CLAIM``: Defines the claim name for roles. If set, Eve roles check will be activated, and any resources with ``allowed_roles`` set will require to have those roles present in the defined token's claim.
 * ``JWT_SCOPE_CLAIM``: Defines the claim name for scope. If set and the token has a claim of the same name containing the string ``viewer``, only ``GET`` and ``HEAD`` methods will be granted. All other values are ignored and added to the list of exposed roles with the ``scope:`` prefix.
 

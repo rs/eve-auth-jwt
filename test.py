@@ -144,6 +144,16 @@ class TestBase(unittest.TestCase):
             client.get('/baz?access_token={}'.format(token.decode('utf-8')))
             self.assertEqual(g.get('authen_roles'), ['role'])
 
+    def test_token_role_context_always(self):
+        claims = {'iss': 'https://domain.com/token',
+                  'aud': 'aud1',
+                  'sub': '0123456789abcdef01234567',
+                  'roles': ['role']}
+        token = jwt.encode(claims, 'secret')
+        with self.app.test_client() as client:
+            client.get('/foo?access_token={}'.format(token.decode('utf-8')))
+            self.assertEqual(g.get('authen_roles'), ['role'])
+
     def test_token_scope(self):
         claims = {'iss': 'https://domain.com/token',
                   'aud': 'aud1',

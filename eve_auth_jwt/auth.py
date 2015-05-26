@@ -101,7 +101,7 @@ class JWTAuth(BasicAuth):
 
         # Check scope is configured and add append it to the roles
         if config.JWT_SCOPE_CLAIM and payload.get(config.JWT_SCOPE_CLAIM):
-            scope = payload.get(config.JWT_SCOPE_CLAIM, [])
+            scope = payload.get(config.JWT_SCOPE_CLAIM)
             # Viewers can only read
             if scope == 'viewer' and method not in ['GET', 'HEAD']:
                 return False
@@ -109,13 +109,15 @@ class JWTAuth(BasicAuth):
 
         # If roles claim is defined, gather roles from the token
         if config.JWT_ROLES_CLAIM:
-            roles = payload.get(config.JWT_ROLES_CLAIM, [])
+            roles = payload.get(config.JWT_ROLES_CLAIM, []) + (roles or [])
 
-        # Check roles
+        # Check roles ir scope or role claim is set
         if allowed_roles and roles is not None:
             if any([True for role in allowed_roles if role not in roles]):
                 return False
-            self.set_authen_roles(roles)
+
+        # Save roles for later access
+        self.set_authen_roles(roles)
 
         # Save claims for later access
         self.set_authen_claims(payload)
