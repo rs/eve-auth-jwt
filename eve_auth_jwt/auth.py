@@ -4,8 +4,7 @@ from eve.auth import BasicAuth
 from eve.utils import config
 from flask import request, Response, g
 from flask import abort
-from jwt import api as jwt
-from jwt.exceptions import InvalidAudienceError
+import jwt
 
 
 class JWTAuth(BasicAuth):
@@ -85,7 +84,7 @@ class JWTAuth(BasicAuth):
             try:
                 payload = jwt.decode(token, key=config.JWT_SECRET, issuer=config.JWT_ISSUER, audience=audience)
                 break  # this skips the for/else clause
-            except InvalidAudienceError:
+            except jwt.InvalidAudienceError:
                 continue
             except Exception:
                 return False
