@@ -110,9 +110,9 @@ class JWTAuth(BasicAuth):
         if config.JWT_ROLES_CLAIM:
             roles = payload.get(config.JWT_ROLES_CLAIM, []) + (roles or [])
 
-        # Check roles ir scope or role claim is set
+        # Check roles if scope or role claim is set
         if allowed_roles and roles is not None:
-            if any([True for role in allowed_roles if role not in roles]):
+            if not any(role in roles for role in allowed_roles):
                 return False
 
         # Save roles for later access
