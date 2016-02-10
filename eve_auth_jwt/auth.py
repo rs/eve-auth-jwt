@@ -4,7 +4,10 @@ from eve.auth import BasicAuth
 from eve.utils import config
 from flask import request, Response, g
 from flask import abort
+from flask import current_app as app
+from functools import wraps
 import jwt
+from .verify_token import verify_token
 
 
 class JWTAuth(BasicAuth):
@@ -75,45 +78,10 @@ class JWTAuth(BasicAuth):
         """
         resource_conf = config.DOMAIN[resource]
         audiences = resource_conf.get('audiences', config.JWT_AUDIENCES)
-        if audiences is None:
-            # Check for a token with no audience
-            audiences = [None]
 
-        # Try to decode token with each allowed audience
-        for audience in audiences:
-            try:
-                payload = jwt.decode(token, key=config.JWT_SECRET, issuer=config.JWT_ISSUER, audience=audience)
-                break  # this skips the for/else clause
-            except jwt.InvalidAudienceError:
-                continue
-            except Exception:
-                return False
-        else:
+        verified, payload, account_id, roles = verify_token(token, request.method, audiences, allowed_roles)
+        if not verified:
             return False
-
-        # Get account id
-        account_id = payload.get('sub')
-        if account_id is None:
-            return False
-
-        roles = None
-
-        # Check scope is configured and add append it to the roles
-        if config.JWT_SCOPE_CLAIM and payload.get(config.JWT_SCOPE_CLAIM):
-            scope = payload.get(config.JWT_SCOPE_CLAIM)
-            # Viewers can only read
-            if scope == 'viewer' and method not in ['GET', 'HEAD']:
-                return False
-            roles = ['scope:%s' % scope]
-
-        # If roles claim is defined, gather roles from the token
-        if config.JWT_ROLES_CLAIM:
-            roles = payload.get(config.JWT_ROLES_CLAIM, []) + (roles or [])
-
-        # Check roles if scope or role claim is set
-        if allowed_roles and roles is not None:
-            if not any(role in roles for role in allowed_roles):
-                return False
 
         # Save roles for later access
         self.set_authen_roles(roles)
@@ -125,3 +93,16 @@ class JWTAuth(BasicAuth):
         self.set_request_auth_value(account_id)
 
         return True
+
+
+def requires_token(audiences=[], allowed_roles=[]):
+    def requires_token_wrapper(f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            token = request.args.get('access_token')
+            verified, _, _, _ = verify_token(token, request.method, audiences, allowed_roles)
+            if not verified:
+                abort(401)
+            return f(*args, **kwargs)
+        return decorated
+    return requires_token_wrapper
