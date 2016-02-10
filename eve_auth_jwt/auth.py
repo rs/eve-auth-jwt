@@ -4,9 +4,7 @@ from eve.auth import BasicAuth
 from eve.utils import config
 from flask import request, Response, g
 from flask import abort
-from flask import current_app as app
 from functools import wraps
-import jwt
 from .verify_token import verify_token
 
 

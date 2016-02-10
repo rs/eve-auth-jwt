@@ -24,7 +24,7 @@ settings = {
             'audiences': ['aud2'],
         },
         'baz': {
-            'allowed_roles': ['role1','role2'],
+            'allowed_roles': ['role1', 'role2'],
         },
     },
 }
@@ -194,7 +194,7 @@ class TestBase(unittest.TestCase):
         r = self.test_client.get('/token/success?access_token={}'.format(token.decode('utf-8')))
         self.assertEqual(r.status_code, 200, r.data)
 
-    def test_requires_token_success(self):
+    def test_requires_token_failure(self):
         claims = {'iss': 'https://domain.com/token',
                   'aud': 'aud1',
                   'sub': '0123456789abcdef01234567',
