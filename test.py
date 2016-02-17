@@ -194,15 +194,25 @@ class TestBase(unittest.TestCase):
         r = self.test_client.get('/token/success?access_token={}'.format(token.decode('utf-8')))
         self.assertEqual(r.status_code, 200, r.data)
 
-    def test_requires_token_failure(self):
+    def test_requires_token_failure_audience(self):
         claims = {'iss': 'https://domain.com/token',
-                  'aud': 'aud1',
+                  'aud': 'aud2',
                   'sub': '0123456789abcdef01234567',
                   'roles': ['super'],
                   'scope': 'user'}
         token = jwt.encode(claims, 'secret')
         r = self.test_client.get('/token/failure?access_token={}'.format(token.decode('utf-8')))
-        self.assertEqual(r.status_code, 422, r.data)
+        self.assertEqual(r.status_code, 401, r.data)
+
+    def test_requires_token_failure_roles(self):
+        claims = {'iss': 'https://domain.com/token',
+                  'aud': 'aud1',
+                  'sub': '0123456789abcdef01234567',
+                  'roles': [],
+                  'scope': 'user'}
+        token = jwt.encode(claims, 'secret')
+        r = self.test_client.get('/token/failure?access_token={}'.format(token.decode('utf-8')))
+        self.assertEqual(r.status_code, 401, r.data)
 
 if __name__ == '__main__':
     unittest.main()
