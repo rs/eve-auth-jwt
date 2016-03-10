@@ -10,7 +10,7 @@ with open('README.rst', 'r') as f:
 
 setup(
     name='eve-auth-jwt',
-    version='1.0.3',
+    version='1.0.4',
     description='Eve JWT authentication',
     long_description=readme,
     author='Olivier Poitrey',
