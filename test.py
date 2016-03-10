@@ -5,6 +5,7 @@ import jwt
 from eve import Eve
 from eve_auth_jwt import JWTAuth
 from flask import g
+from eve_auth_jwt.tests import test_routes
 
 settings = {
     'JWT_SECRET': 'secret',
@@ -23,7 +24,7 @@ settings = {
             'audiences': ['aud2'],
         },
         'baz': {
-            'allowed_roles': ['role1','role2'],
+            'allowed_roles': ['role1', 'role2'],
         },
     },
 }
@@ -32,6 +33,8 @@ settings = {
 class TestBase(unittest.TestCase):
     def setUp(self):
         self.app = Eve(settings=settings, auth=JWTAuth)
+        test_routes.register(self.app)
+
         self.test_client = self.app.test_client()
 
     def test_restricted_access(self):
@@ -180,6 +183,36 @@ class TestBase(unittest.TestCase):
         token = jwt.encode(claims, 'secret')
         r = self.test_client.post('/foo?access_token={}'.format(token.decode('utf-8')))
         self.assertEqual(r.status_code, 401)
+
+    def test_requires_token_success(self):
+        claims = {'iss': 'https://domain.com/token',
+                  'aud': 'aud1',
+                  'sub': '0123456789abcdef01234567',
+                  'roles': ['super'],
+                  'scope': 'user'}
+        token = jwt.encode(claims, 'secret')
+        r = self.test_client.get('/token/success?access_token={}'.format(token.decode('utf-8')))
+        self.assertEqual(r.status_code, 200, r.data)
+
+    def test_requires_token_failure_audience(self):
+        claims = {'iss': 'https://domain.com/token',
+                  'aud': 'aud2',
+                  'sub': '0123456789abcdef01234567',
+                  'roles': ['super'],
+                  'scope': 'user'}
+        token = jwt.encode(claims, 'secret')
+        r = self.test_client.get('/token/failure?access_token={}'.format(token.decode('utf-8')))
+        self.assertEqual(r.status_code, 401, r.data)
+
+    def test_requires_token_failure_roles(self):
+        claims = {'iss': 'https://domain.com/token',
+                  'aud': 'aud1',
+                  'sub': '0123456789abcdef01234567',
+                  'roles': [],
+                  'scope': 'user'}
+        token = jwt.encode(claims, 'secret')
+        r = self.test_client.get('/token/failure?access_token={}'.format(token.decode('utf-8')))
+        self.assertEqual(r.status_code, 401, r.data)
 
 if __name__ == '__main__':
     unittest.main()
