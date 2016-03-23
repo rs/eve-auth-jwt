@@ -31,15 +31,10 @@ class JWTAuth(BasicAuth):
             auth = request.authorization
             authorized = self.check_auth(auth.username, auth.password,
                                          allowed_roles, resource, method)
-        elif request.args.get('access_token'):
-            access_token = request.args.get('access_token')
-            authorized = self.check_token(access_token, allowed_roles, resource, method)
         else:
-            try:
-                access_token = request.headers.get('Authorization').split(' ')[1]
+            access_token, _ = extract_token()
+            if access_token is not None:
                 authorized = self.check_token(access_token, allowed_roles, resource, method)
-            except:
-                pass
 
         return authorized
 
@@ -91,6 +86,26 @@ class JWTAuth(BasicAuth):
         self.set_request_auth_value(account_id)
 
         return True
+
+
+def extract_token():
+    """
+    Parse access token from incoming request.
+
+    Returns: (access_token, isParam)
+        access_token (string or None): Access token
+        isParam (boolean): Whether token was parsed from URL parameters or from the request header
+    """
+    if request.args.get('access_token'):
+        return (request.args.get('access_token'), True)
+
+    try:
+        access_token = request.headers.get('Authorization').split(' ')[1]
+        if access_token:
+            return (access_token, False)
+    except:
+        pass
+    return (None, False)
 
 
 def requires_token(audiences=[], allowed_roles=[]):
