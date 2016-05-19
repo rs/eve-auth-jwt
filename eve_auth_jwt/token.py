@@ -3,17 +3,22 @@ from flask import request
 import jwt
 
 
-def verify_token(token, method=None, audiences=[], allowed_roles=[]):
+def decode_token(token, audiences=[]):
     # Try to decode token with each allowed audience
     for audience in audiences:
         try:
-            payload = jwt.decode(token, key=config.JWT_SECRET, issuer=config.JWT_ISSUER, audience=audience)
-            break  # this skips the for/else clause
+            return jwt.decode(token, key=config.JWT_SECRET, issuer=config.JWT_ISSUER, audience=audience)
         except jwt.InvalidAudienceError:
             continue
         except Exception:
-            return (False, None, None, None)
+            return None
     else:
+        return None
+
+
+def verify_token(token, method=None, audiences=[], allowed_roles=[]):
+    payload = decode_token(token, audiences)
+    if payload is None:
         return (False, None, None, None)
 
     # Get account id
