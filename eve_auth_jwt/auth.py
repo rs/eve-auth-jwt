@@ -5,7 +5,7 @@ from eve.utils import config
 from flask import request, Response, g
 from flask import abort
 from functools import wraps
-from .verify_token import verify_token
+from .token import extract_token, verify_token
 
 
 class JWTAuth(BasicAuth):
@@ -86,26 +86,6 @@ class JWTAuth(BasicAuth):
         self.set_request_auth_value(account_id)
 
         return True
-
-
-def extract_token():
-    """
-    Parse access token from incoming request.
-
-    Returns: (access_token, isParam)
-        access_token (string or None): Access token
-        isParam (boolean): Whether token was parsed from URL parameters or from the request header
-    """
-    if request.args.get('access_token'):
-        return (request.args.get('access_token'), True)
-
-    try:
-        access_token = request.headers.get('Authorization').split(' ')[1]
-        if access_token:
-            return (access_token, False)
-    except:
-        pass
-    return (None, False)
 
 
 def requires_token(audiences=[], allowed_roles=[]):

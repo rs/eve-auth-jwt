@@ -1,4 +1,5 @@
 from eve.utils import config
+from flask import request
 import jwt
 
 
@@ -40,3 +41,23 @@ def verify_token(token, method=None, audiences=[], allowed_roles=[]):
             return (False, payload, account_id, roles)
 
     return (True, payload, account_id, roles)
+
+
+def extract_token():
+    """
+    Parse access token from incoming request.
+
+    Returns: (access_token, isParam)
+        access_token (string or None): Access token
+        isParam (boolean): Whether token was parsed from URL parameters or from the request header
+    """
+    if request.args.get('access_token'):
+        return (request.args.get('access_token'), True)
+
+    try:
+        access_token = request.headers.get('Authorization').split(' ')[1]
+        if access_token:
+            return (access_token, False)
+    except:
+        pass
+    return (None, False)

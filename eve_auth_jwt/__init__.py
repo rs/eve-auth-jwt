@@ -1,1 +1,2 @@
-from .auth import JWTAuth, extract_token, requires_token
+from .auth import JWTAuth, requires_token
+from .token import extract_token
