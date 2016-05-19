@@ -5,7 +5,7 @@ from eve.utils import config
 from flask import request, Response, g
 from flask import abort
 from functools import wraps
-from .verify_token import verify_token
+from .token import extract_token, verify_token
 
 
 class JWTAuth(BasicAuth):
@@ -31,15 +31,10 @@ class JWTAuth(BasicAuth):
             auth = request.authorization
             authorized = self.check_auth(auth.username, auth.password,
                                          allowed_roles, resource, method)
-        elif request.args.get('access_token'):
-            access_token = request.args.get('access_token')
-            authorized = self.check_token(access_token, allowed_roles, resource, method)
         else:
-            try:
-                access_token = request.headers.get('Authorization').split(' ')[1]
+            access_token, _ = extract_token()
+            if access_token is not None:
                 authorized = self.check_token(access_token, allowed_roles, resource, method)
-            except:
-                pass
 
         return authorized
 

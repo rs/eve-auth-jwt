@@ -1,18 +1,24 @@
 from eve.utils import config
+from flask import request
 import jwt
 
 
-def verify_token(token, method=None, audiences=[], allowed_roles=[]):
+def decode_token(token, audiences=[]):
     # Try to decode token with each allowed audience
     for audience in audiences:
         try:
-            payload = jwt.decode(token, key=config.JWT_SECRET, issuer=config.JWT_ISSUER, audience=audience)
-            break  # this skips the for/else clause
+            return jwt.decode(token, key=config.JWT_SECRET, issuer=config.JWT_ISSUER, audience=audience)
         except jwt.InvalidAudienceError:
             continue
         except Exception:
-            return (False, None, None, None)
+            return None
     else:
+        return None
+
+
+def verify_token(token, method=None, audiences=[], allowed_roles=[]):
+    payload = decode_token(token, audiences)
+    if payload is None:
         return (False, None, None, None)
 
     # Get account id
@@ -40,3 +46,23 @@ def verify_token(token, method=None, audiences=[], allowed_roles=[]):
             return (False, payload, account_id, roles)
 
     return (True, payload, account_id, roles)
+
+
+def extract_token():
+    """
+    Parse access token from incoming request.
+
+    Returns: (access_token, isParam)
+        access_token (string or None): Access token
+        isParam (boolean): Whether token was parsed from URL parameters or from the request header
+    """
+    if request.args.get('access_token'):
+        return (request.args.get('access_token'), True)
+
+    try:
+        access_token = request.headers.get('Authorization').split(' ')[1]
+        if access_token:
+            return (access_token, False)
+    except:
+        pass
+    return (None, False)
