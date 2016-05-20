@@ -47,9 +47,11 @@ If access is granted, the authentication module exposes roles and token's claims
 
 
 Securing custom routes
--------------
+----------------------
 
 JWT Authorization can be applied to any custom routes using the `@requires_token` wrapper. This annotation will only provide *audience and role access control*. User level access must be written manually.
+
+Example of audience access control::
 
     from eve_auth_jwt import requires_token, get_request_auth_value
 
@@ -58,13 +60,13 @@ JWT Authorization can be applied to any custom routes using the `@requires_token
     def csv_download():
         # Allows all users with myAudience to access download
         account_id = get_request_auth_value()
-
         if check_user(account_id):
+
             abort(401)
 
         return generateCSV(account_id)
 
-Here is an example of `myAdmin` access control:
+Example of `myAdmin` access control::
 
     from eve_auth_jwt import requires_token
 
@@ -72,22 +74,28 @@ Here is an example of `myAdmin` access control:
     @requires_token(audiences=['myAudience'], allowed_roles=['myAdmin'])
     def csv_download():
         account_id = request.args.get('account_id', None)
-
         return generateCSV(account_id)
 
 
 Access the parsed JWT token values
--------------
+----------------------------------
 
 The parsed JWT token values are stored in the `flask.g` dict, but custom functions exist to aid in reading the values. The values are only available after the JWT token integrity check and user authorization occurs.
 
+Example of access the parse JWT token fields::
+
     from eve_auth_jwt import get_request_auth_value, get_authen_claims, get_authen_roles
 
-
     def my_fn():
+        # Request authentication value as a str
         account_id = get_request_auth_value()
+
+        # JWT claims as a dict[str]
         payload = get_authen_claims()
+
+        # Roles as arr[str]
         roles = get_authen_roles()
+
 
 Licenses
 --------
