@@ -99,34 +99,61 @@ class JWTAuth(BasicAuth):
 
 
 def set_authen_claims(claims):
+    """
+    Set the authentication claims
+
+    Parameters:
+        claims (dict[str]): JWT claims
+    """
     setattr(g, AUTHEN_CLAIMS, claims)
 
 
 def get_authen_claims():
     """
     Get the authentication claims
+
+    Returns:
+        dict[str]: JWT claims
     """
     return g.get(AUTHEN_CLAIMS, {})
 
 
-def set_authen_roles(roles):
+def set_authen_roles(roles=[]):
+    """
+    Get the authentication roles
+
+    Parameters:
+        roles (arr[str])
+    """
     setattr(g, AUTHEN_ROLES, roles)
 
 
 def get_authen_roles():
     """
     Get the authentication roles
+
+    Returns:
+        arr[str]: Array of associated roles
     """
     return g.get(AUTHEN_ROLES, [])
 
 
-def set_request_auth_value(value):
+def set_request_auth_value(value=None):
+    """
+    Sets the current request's auth value
+
+    Parameters:
+        value (str|None): The request auth value
+    """
     setattr(g, AUTH_VALUE, value)
 
 
 def get_request_auth_value():
     """
     Get the authentication value
+
+    Returns:
+        str: auth value string
     """
     return g.get(AUTH_VALUE)
 
