@@ -8,21 +8,26 @@ from functools import wraps
 from .verify_token import verify_token
 
 
+AUTHEN_CLAIMS = 'authen_claims'
+AUTHEN_ROLES = 'authen_roles'
+AUTH_VALUE = 'auth_value'
+
+
 class JWTAuth(BasicAuth):
     """
     Implements JWT token validation support.
     """
     def set_authen_claims(self, claims):
-        g.authen_claims = claims
+        setattr(g, AUTHEN_CLAIMS, claims)
 
     def get_authen_claims(self):
-        return g.get('authen_claims', {})
+        return g.get(AUTHEN_CLAIMS, {})
 
     def set_authen_roles(self, roles):
-        g.authen_roles = roles
+        setattr(g, AUTHEN_ROLES, roles)
 
     def get_authen_roles(self):
-        return g.get('authen_roles', [])
+        return g.get(AUTHEN_ROLES, [])
 
     def authorized(self, allowed_roles, resource, method):
         authorized = False
@@ -93,14 +98,84 @@ class JWTAuth(BasicAuth):
         return True
 
 
+def set_authen_claims(claims):
+    """
+    Set the authentication claims
+
+    Parameters:
+        claims (dict[str]): JWT claims
+    """
+    setattr(g, AUTHEN_CLAIMS, claims)
+
+
+def get_authen_claims():
+    """
+    Get the authentication claims
+
+    Returns:
+        dict[str]: JWT claims
+    """
+    return g.get(AUTHEN_CLAIMS, {})
+
+
+def set_authen_roles(roles=[]):
+    """
+    Get the authentication roles
+
+    Parameters:
+        roles (arr[str])
+    """
+    setattr(g, AUTHEN_ROLES, roles)
+
+
+def get_authen_roles():
+    """
+    Get the authentication roles
+
+    Returns:
+        arr[str]: Array of associated roles
+    """
+    return g.get(AUTHEN_ROLES, [])
+
+
+def set_request_auth_value(value=None):
+    """
+    Sets the current request's auth value
+
+    Parameters:
+        value (str|None): The request auth value
+    """
+    setattr(g, AUTH_VALUE, value)
+
+
+def get_request_auth_value():
+    """
+    Get the authentication value
+
+    Returns:
+        str: auth value string
+    """
+    return g.get(AUTH_VALUE)
+
+
 def requires_token(audiences=[], allowed_roles=[]):
     def requires_token_wrapper(f):
         @wraps(f)
         def decorated(*args, **kwargs):
             token = request.args.get('access_token')
-            verified, _, _, _ = verify_token(token, request.method, audiences, allowed_roles)
+            verified, payload, account_id, roles = verify_token(token, request.method, audiences, allowed_roles)
             if not verified:
                 abort(401)
+
+            # Save roles for later access
+            set_authen_roles(roles)
+
+            # Save claims for later access
+            set_authen_claims(payload)
+
+            # Limit access to the authen account
+            set_request_auth_value(account_id)
+
             return f(*args, **kwargs)
         return decorated
     return requires_token_wrapper
