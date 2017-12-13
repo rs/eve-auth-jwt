@@ -162,7 +162,10 @@ def requires_token(audiences=[], allowed_roles=[]):
     def requires_token_wrapper(f):
         @wraps(f)
         def decorated(*args, **kwargs):
-            token = request.args.get('access_token')
+            if request.args.get('access_token'):
+                token = request.args.get('access_token')
+            else:
+                token = request.headers.get('Authorization').split(' ')[1]
             verified, payload, account_id, roles = verify_token(token, request.method, audiences, allowed_roles)
             if not verified:
                 abort(401)
