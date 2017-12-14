@@ -165,7 +165,10 @@ def requires_token(audiences=[], allowed_roles=[]):
             if request.args.get('access_token'):
                 token = request.args.get('access_token')
             else:
-                token = request.headers.get('Authorization').split(' ')[1]
+                try:
+                    token = request.headers.get('Authorization').split(' ')[1]
+                except:
+                    pass
             verified, payload, account_id, roles = verify_token(token, request.method, audiences, allowed_roles)
             if not verified:
                 abort(401)
