@@ -43,7 +43,7 @@ class JWTAuth(BasicAuth):
             try:
                 access_token = request.headers.get('Authorization').split(' ')[1]
                 authorized = self.check_token(access_token, allowed_roles, resource, method)
-            except:
+            except Exception:
                 pass
 
         return authorized

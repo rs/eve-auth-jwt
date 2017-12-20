@@ -2,24 +2,32 @@ from eve.utils import config
 import jwt
 
 
-def verify_token(token, method=None, audiences=[], allowed_roles=[]):
+def verify_token(token, method=None, audiences=None, allowed_roles=None):
     # Try to decode token with each allowed audience
-    for audience in audiences:
+    def decode(audience=None):
+        return jwt.decode(
+                token, key=config.JWT_SECRET,
+                issuer=config.JWT_ISSUER, audience=audience)
+
+    if not audiences:
         try:
-            payload = jwt.decode(token, key=config.JWT_SECRET, issuer=config.JWT_ISSUER, audience=audience)
-            break  # this skips the for/else clause
-        except jwt.InvalidAudienceError:
-            continue
+            payload = decode()
         except Exception:
             return (False, None, None, None)
     else:
-        return (False, None, None, None)
+        for audience in audiences:
+            try:
+                payload = decode(audience)
+            except jwt.InvalidAudienceError:
+                continue
+            except Exception:
+                return (False, None, None, None)
+            else:
+                break  # this skips the for/else clause
+        else:
+            return (False, None, None, None)
 
-    # Get account id
-    account_id = payload.get('sub')
-    if account_id is None:
-        return (False, payload, None, None)
-
+    account_id = payload.get('sub')  # Get account id
     roles = None
 
     # Check scope is configured and add append it to the roles
