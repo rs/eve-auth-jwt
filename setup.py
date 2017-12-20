@@ -19,9 +19,9 @@ setup(
     keywords=['eve', 'api', 'rest', 'oauth', 'auth', 'jwt'],
     packages=['eve_auth_jwt'],
     package_dir={'eve_auth_jwt': 'eve_auth_jwt'},
-    install_requires=['eve>=0.5.0', 'pyjwt==1.3.0'],
+    install_requires=['eve>=0.7.5', 'pyjwt==1.5.3'],
     test_suite='test',
-    tests_require=['flake8', 'nose'],
+    tests_require=['flake8'],
     license='MIT',
     classifiers=[
         'Development Status :: 4 - Beta',
