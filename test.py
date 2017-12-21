@@ -10,7 +10,6 @@ from eve_auth_jwt.tests import test_routes
 settings = {
     'JWT_SECRET': 'secret',
     'JWT_ISSUER': 'https://domain.com/token',
-    'JWT_AUDIENCES': ['aud1'],
     'JWT_ROLES_CLAIM': 'roles',
     'JWT_SCOPE_CLAIM': 'scope',
     'DOMAIN': {
@@ -18,13 +17,17 @@ settings = {
             'schema': {
                 'name': {},
             },
+            'audiences': ['aud1'],
             'resource_methods': ['POST', 'GET'],
         },
         'bar': {
             'audiences': ['aud2'],
         },
         'baz': {
+            'audiences': ['aud1'],
             'allowed_roles': ['role1', 'role2'],
+        },
+        'bad': {
         },
     },
 }
@@ -86,7 +89,7 @@ class TestBase(unittest.TestCase):
                   'aud': 'aud1'}
         token = jwt.encode(claims, 'secret')
         r = self.test_client.get('/foo?access_token={}'.format(token.decode('utf-8')))
-        self.assertEqual(r.status_code, 401)
+        self.assertEqual(r.status_code, 200)
 
     def test_invalid_token_issuer(self):
         claims = {'iss': 'https://invalid-domain.com/token',
@@ -228,6 +231,20 @@ class TestBase(unittest.TestCase):
     def test_auth_header_token_failure(self):
         r = self.test_client.get('/token/failure')
         self.assertEqual(r.status_code, 401, r.data)
+
+    def test_no_audience_token_success(self):
+        claims = {'iss': 'https://domain.com/token'}
+        token = jwt.encode(claims, 'secret')
+        r = self.test_client.get('/bad?access_token={}'.format(token.decode('utf-8')))
+        self.assertEqual(r.status_code, 200)
+
+    def test_no_audience_token_failure(self):
+        claims = {'iss': 'https://domain.com/token',
+                  'aud': 'aud1',
+                  'sub': '0123456789abcdef01234567'}
+        token = jwt.encode(claims, 'secret')
+        r = self.test_client.get('/bad?access_token={}'.format(token.decode('utf-8')))
+        self.assertEqual(r.status_code, 401)
 
 
 if __name__ == '__main__':
