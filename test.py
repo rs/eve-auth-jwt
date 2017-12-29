@@ -7,6 +7,7 @@ from eve_auth_jwt import JWTAuth
 from flask import g
 from eve_auth_jwt.tests import test_routes
 
+
 settings = {
     'JWT_SECRET': 'secret',
     'JWT_ISSUER': 'https://domain.com/token',
@@ -28,6 +29,10 @@ settings = {
             'allowed_roles': ['role1', 'role2'],
         },
         'bad': {
+        },
+        'bag': {
+            'audiences': ['aud1'],
+            'authentication': JWTAuth('custom'),
         },
     },
 }
@@ -244,6 +249,31 @@ class TestBase(unittest.TestCase):
                   'sub': '0123456789abcdef01234567'}
         token = jwt.encode(claims, 'secret')
         r = self.test_client.get('/bad?access_token={}'.format(token.decode('utf-8')))
+        self.assertEqual(r.status_code, 401)
+
+    def test_endpoint_level_auth_with_different_secret(self):
+        claims = {'iss': 'https://domain.com/token',
+                  'aud': 'aud1'}
+        token = jwt.encode(claims, 'custom')
+        r = self.test_client.get('/bag?access_token={}'.format(token.decode('utf-8')))
+        self.assertEqual(r.status_code, 200)
+
+    def test_auth_header_token_success_with_different_secret(self):
+        claims = {'iss': 'custom_issuer',
+                  'aud': 'aud1',
+                  'roles': ['super']}
+        token = jwt.encode(claims, 'custom_secret')
+        headers = {'Authorization': 'Bearer {}'.format(token.decode('utf-8'))}
+        r = self.test_client.get('/custom/success', headers=headers)
+        self.assertEqual(r.status_code, 200)
+
+    def test_auth_header_token_failure_with_wrong_issuer(self):
+        claims = {'iss': 'https://domain.com/token',
+                  'aud': 'aud1',
+                  'roles': ['super']}
+        token = jwt.encode(claims, 'custom_secret')
+        headers = {'Authorization': 'Bearer {}'.format(token.decode('utf-8'))}
+        r = self.test_client.get('/custom/success', headers=headers)
         self.assertEqual(r.status_code, 401)
 
 

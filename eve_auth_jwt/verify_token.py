@@ -2,12 +2,10 @@ from eve.utils import config
 import jwt
 
 
-def verify_token(token, method=None, audiences=None, allowed_roles=None):
+def verify_token(token, secret, issuer, method=None, audiences=None, allowed_roles=None):
     # Try to decode token with each allowed audience
     def decode(audience=None):
-        return jwt.decode(
-                token, key=config.JWT_SECRET,
-                issuer=config.JWT_ISSUER, audience=audience)
+        return jwt.decode(token, key=secret, issuer=issuer, audience=audience)
 
     if not audiences:
         try:
