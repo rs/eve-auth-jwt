@@ -217,6 +217,21 @@ class TestBase(unittest.TestCase):
         r = self.test_client.get('/token/failure?access_token={}'.format(token.decode('utf-8')))
         self.assertEqual(r.status_code, 401, r.data)
 
+    def test_auth_header_token_success(self):
+        claims = {'iss': 'https://domain.com/token',
+                  'aud': 'aud1',
+                  'sub': '0123456789abcdef01234567',
+                  'roles': ['super'],
+                  'scope': 'user'}
+        token = jwt.encode(claims, 'secret')
+        headers = {'Authorization': 'Bearer {}'.format(token.decode('utf-8'))}
+        r = self.test_client.get('/token/success', headers=headers)
+        self.assertEqual(r.status_code, 200)
+
+    def test_auth_header_token_failure(self):
+        r = self.test_client.get('/token/failure')
+        self.assertEqual(r.status_code, 401, r.data)
+
     def test_no_audience_token_success(self):
         claims = {'iss': 'https://domain.com/token'}
         token = jwt.encode(claims, 'secret')

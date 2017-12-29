@@ -36,15 +36,12 @@ class JWTAuth(BasicAuth):
             auth = request.authorization
             authorized = self.check_auth(auth.username, auth.password,
                                          allowed_roles, resource, method)
-        elif request.args.get('access_token'):
-            access_token = request.args.get('access_token')
-            authorized = self.check_token(access_token, allowed_roles, resource, method)
         else:
             try:
-                access_token = request.headers.get('Authorization').split(' ')[1]
-                authorized = self.check_token(access_token, allowed_roles, resource, method)
-            except Exception:
-                pass
+                access_token = request.args['access_token']
+            except KeyError:
+                access_token = request.headers.get('Authorization', '').partition(' ')[2]
+            authorized = self.check_token(access_token, allowed_roles, resource, method)
 
         return authorized
 
@@ -158,11 +155,15 @@ def get_request_auth_value():
     return g.get(AUTH_VALUE)
 
 
-def requires_token(audiences=[], allowed_roles=[]):
+def requires_token(audiences=None, allowed_roles=None):
     def requires_token_wrapper(f):
         @wraps(f)
         def decorated(*args, **kwargs):
-            token = request.args.get('access_token')
+            try:
+                token = request.args['access_token']
+            except KeyError:
+                token = request.headers.get('Authorization', '').partition(' ')[2]
+
             verified, payload, account_id, roles = verify_token(token, request.method, audiences, allowed_roles)
             if not verified:
                 abort(401)
