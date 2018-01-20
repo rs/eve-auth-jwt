@@ -97,6 +97,28 @@ Example of access the parse JWT token fields::
         roles = get_authen_roles()
 
 
+Different JWTAuth on different endpoints
+----------------------------------------
+
+Eve supports both global authentication of the whole API, and endpoint-level authentication. If one wish to use different secret keys and/or issuers on certain endpoints, it is possible to create instances of JWTAuth which overrides the global config values of ``JWT_SECRET`` and ``JWT_ISSUER``.
+
+The secret key and issuer can be set through the JWTAuth constructor or as properties on instances of JWTAuth.
+
+Example usage::
+
+    from eve import Eve
+    from eve_auth_jwt import JWTAuth
+
+    second_auth = JWTAuth('custom secret', 'specific issuer')
+
+    app = Eve(auth=JWTAuth, settings=SETTINGS)
+
+    @app.route('/second')
+    @second_auth.requires_token()
+    def different_secret():
+        return 'Success with custom secret!'
+
+
 Licenses
 --------
 

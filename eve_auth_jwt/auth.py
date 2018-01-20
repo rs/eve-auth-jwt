@@ -17,6 +17,31 @@ class JWTAuth(BasicAuth):
     """
     Implements JWT token validation support.
     """
+
+    def __init__(self, secret=None, issuer=None):
+        self.secret = secret
+        self.issuer = issuer
+
+    @property
+    def secret(self):
+        if self._secret is None:
+            return config.JWT_SECRET
+        return self._secret
+
+    @secret.setter
+    def secret(self, value):
+        self._secret = value
+
+    @property
+    def issuer(self):
+        if self._issuer is None:
+            return config.JWT_ISSUER
+        return self._issuer
+
+    @issuer.setter
+    def issuer(self, value):
+        self._issuer = value
+
     def set_authen_claims(self, claims):
         setattr(g, AUTHEN_CLAIMS, claims)
 
@@ -78,8 +103,35 @@ class JWTAuth(BasicAuth):
         """
         resource_conf = config.DOMAIN[resource]
         audiences = resource_conf.get('audiences', config.JWT_AUDIENCES)
+        return self._perform_verification(token, audiences, allowed_roles)
 
-        verified, payload, account_id, roles = verify_token(token, request.method, audiences, allowed_roles)
+    def requires_token(self, audiences=None, allowed_roles=None):
+        """
+        Decorator for functions that will be protected with token authentication.
+
+        Token must be provvided either through access_token parameter or Authorization
+        header.
+
+        See check_token() method for further details.
+        """
+        def requires_token_wrapper(f):
+            @wraps(f)
+            def decorated(*args, **kwargs):
+                try:
+                    token = request.args['access_token']
+                except KeyError:
+                    token = request.headers.get('Authorization', '').partition(' ')[2]
+
+                if not self._perform_verification(token, audiences, allowed_roles):
+                    abort(401)
+
+                return f(*args, **kwargs)
+            return decorated
+        return requires_token_wrapper
+
+    def _perform_verification(self, token, audiences, allowed_roles):
+        verified, payload, account_id, roles = verify_token(
+                token, self.secret, self.issuer, request.method, audiences, allowed_roles)
         if not verified:
             return False
 
@@ -93,6 +145,9 @@ class JWTAuth(BasicAuth):
         self.set_request_auth_value(account_id)
 
         return True
+
+
+requires_token = JWTAuth().requires_token
 
 
 def set_authen_claims(claims):
@@ -153,30 +208,3 @@ def get_request_auth_value():
         str: auth value string
     """
     return g.get(AUTH_VALUE)
-
-
-def requires_token(audiences=None, allowed_roles=None):
-    def requires_token_wrapper(f):
-        @wraps(f)
-        def decorated(*args, **kwargs):
-            try:
-                token = request.args['access_token']
-            except KeyError:
-                token = request.headers.get('Authorization', '').partition(' ')[2]
-
-            verified, payload, account_id, roles = verify_token(token, request.method, audiences, allowed_roles)
-            if not verified:
-                abort(401)
-
-            # Save roles for later access
-            set_authen_roles(roles)
-
-            # Save claims for later access
-            set_authen_claims(payload)
-
-            # Limit access to the authen account
-            set_request_auth_value(account_id)
-
-            return f(*args, **kwargs)
-        return decorated
-    return requires_token_wrapper
