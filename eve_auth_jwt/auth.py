@@ -101,7 +101,7 @@ class JWTAuth(BasicAuth):
         If the validation succeed, the claims are stored and accessible thru the
         get_authen_claims() method.
         """
-        resource_conf = config.DOMAIN[resource]
+        resource_conf = config.DOMAIN.get(resource, {})
         audiences = resource_conf.get('audiences', config.JWT_AUDIENCES)
         return self._perform_verification(token, audiences, allowed_roles)
 
