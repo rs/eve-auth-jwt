@@ -1,0 +1,141 @@
+version: '3'
+services:
+  mongo:
+    image: mongo:3.6.17
+    networks:
+      - ns
+
+  format-imports:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        target: .[testing]
+    command: isort -rc eve_auth_jwt/.
+    networks:
+      - ns
+    environment:
+      - PYTHONPATH=/usr/src/app/
+    volumes:
+      - .:/usr/src/app
+
+  check-format-imports:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        target: .[testing]
+    command: isort --check-only -rc eve_auth_jwt/.
+    networks:
+      - ns
+    environment:
+      - PYTHONPATH=/usr/src/app/
+
+  format: &format
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        target: .[testing]
+    command: black -l 79 --py36 eve_auth_jwt tests
+    networks:
+      - ns
+    environment:
+      - PYTHONPATH=/usr/src/app/
+    volumes:
+      - .:/usr/src/app
+
+  check-format:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        target: .[testing]
+    command: black -l 79 --py36 --check eve_auth_jwt tests
+    networks:
+      - ns
+    environment:
+      - PYTHONPATH=/usr/src/app/
+
+  style:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        target: .[testing]
+    command: pylint --reports=n eve_auth_jwt
+    environment:
+      - PYTHONPATH=/usr/src/app/
+    networks:
+      - ns
+
+  complexity:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        target: .[testing]
+    command: xenon --ignore "tests" --max-absolute C --max-modules C --max-average C .
+    environment:
+      - PYTHONPATH=/usr/src/app/
+    networks:
+      - ns
+
+  test-unit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        target: .[testing]
+    command: py.test -s tests --junitxml=reports/report_unit_tests.xml --cov eve_auth_jwt --cov-config .coveragerc --cov-report term --cov-report xml:reports/coverage.xml --cov-report html:reports
+    environment:
+      - PYTHONPATH=/usr/src/app/
+    volumes:
+      - ./reports:/usr/src/app/reports
+    networks:
+      - ns
+    depends_on:
+      - mongo
+
+  shell:
+    <<: *format
+    command: bash
+
+  security-sast:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        target: .[testing]
+    command: bandit -r ./eve_auth_jwt ./tests
+    networks:
+      - ns
+
+  build-package:
+    build: .
+    command: python setup.py sdist
+    environment:
+      - "PYTHONPATH=/usr/src/app/"
+    volumes:
+      - ./:/usr/src/app
+    networks:
+      - ns
+
+  build-clean:
+    build: .
+    command: rm *egg* dist/ -rfv
+    environment:
+      - "PYTHONPATH=/usr/src/app/"
+    volumes:
+      - ./:/usr/src/app
+    networks:
+      - ns
+
+  devpi:
+    image: quay.io/dailymotionadmin/devpi-server:latest
+    volumes:
+      - ./:/usr/src/app
+    environment:
+      - PYTHONPATH=/usr/src/app/
+    networks:
+      - ns

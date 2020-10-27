@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 
+from functools import wraps
+
 from eve.auth import BasicAuth
 from eve.utils import config
-from flask import request, Response, g
-from flask import abort
-from functools import wraps
+from flask import Response, abort, g, request
+
 from .verify_token import verify_token
 
-
-AUTHEN_CLAIMS = 'authen_claims'
-AUTHEN_ROLES = 'authen_roles'
-AUTH_VALUE = 'auth_value'
+AUTHEN_CLAIMS = "authen_claims"
+AUTHEN_ROLES = "authen_roles"
+AUTH_VALUE = "auth_value"
 
 
 class JWTAuth(BasicAuth):
@@ -30,7 +30,7 @@ class JWTAuth(BasicAuth):
 
     @secret.setter
     def secret(self, value):
-        self._secret = value
+        self._secret = value  # pylint: disable=attribute-defined-outside-init
 
     @property
     def issuer(self):
@@ -40,18 +40,22 @@ class JWTAuth(BasicAuth):
 
     @issuer.setter
     def issuer(self, value):
-        self._issuer = value
+        self._issuer = value  # pylint: disable=attribute-defined-outside-init
 
-    def set_authen_claims(self, claims):
+    @classmethod
+    def set_authen_claims(cls, claims):
         setattr(g, AUTHEN_CLAIMS, claims)
 
-    def get_authen_claims(self):
+    @classmethod
+    def get_authen_claims(cls):
         return g.get(AUTHEN_CLAIMS, {})
 
-    def set_authen_roles(self, roles):
+    @classmethod
+    def set_authen_roles(cls, roles):
         setattr(g, AUTHEN_ROLES, roles)
 
-    def get_authen_roles(self):
+    @classmethod
+    def get_authen_roles(cls):
         return g.get(AUTHEN_ROLES, [])
 
     def authorized(self, allowed_roles, resource, method):
@@ -59,14 +63,19 @@ class JWTAuth(BasicAuth):
 
         if request.authorization:
             auth = request.authorization
-            authorized = self.check_auth(auth.username, auth.password,
-                                         allowed_roles, resource, method)
+            authorized = self.check_auth(
+                auth.username, auth.password, allowed_roles, resource, method
+            )
         else:
             try:
-                access_token = request.args['access_token']
+                access_token = request.args["access_token"]
             except KeyError:
-                access_token = request.headers.get('Authorization', '').partition(' ')[2]
-            authorized = self.check_token(access_token, allowed_roles, resource, method)
+                access_token = request.headers.get(
+                    "Authorization", ""
+                ).partition(" ")[2]
+            authorized = self.check_token(
+                access_token, allowed_roles, resource
+            )
 
         return authorized
 
@@ -74,14 +83,18 @@ class JWTAuth(BasicAuth):
         """
         Indicate to the client that it needs to authenticate via a 401.
         """
-        if request.headers.get('Authorization') or request.args.get('access_token'):
+        if request.headers.get("Authorization") or request.args.get(
+            "access_token"
+        ):
             realm = 'Bearer realm="%s", error="invalid_token"' % __package__
         else:
             realm = 'Bearer realm="%s"' % __package__
-        resp = Response(None, 401, {'WWW-Authenticate': realm})
-        abort(401, description='Please provide proper credentials', response=resp)
+        resp = Response(None, 401, {"WWW-Authenticate": realm})
+        abort(
+            401, description="Please provide proper credentials", response=resp
+        )
 
-    def check_token(self, token, allowed_roles, resource, method):
+    def check_token(self, token, allowed_roles, resource):
         """
         This function is called when a token is sent throught the access_token
         parameter or the Authorization header as specified in the oAuth 2 specification.
@@ -102,7 +115,7 @@ class JWTAuth(BasicAuth):
         get_authen_claims() method.
         """
         resource_conf = config.DOMAIN[resource]
-        audiences = resource_conf.get('audiences', config.JWT_AUDIENCES)
+        audiences = resource_conf.get("audiences", config.JWT_AUDIENCES)
         return self._perform_verification(token, audiences, allowed_roles)
 
     def requires_token(self, audiences=None, allowed_roles=None):
@@ -114,24 +127,37 @@ class JWTAuth(BasicAuth):
 
         See check_token() method for further details.
         """
-        def requires_token_wrapper(f):
-            @wraps(f)
+
+        def requires_token_wrapper(func):
+            @wraps(func)
             def decorated(*args, **kwargs):
                 try:
-                    token = request.args['access_token']
+                    token = request.args["access_token"]
                 except KeyError:
-                    token = request.headers.get('Authorization', '').partition(' ')[2]
+                    token = request.headers.get("Authorization", "").partition(
+                        " "
+                    )[2]
 
-                if not self._perform_verification(token, audiences, allowed_roles):
+                if not self._perform_verification(
+                    token, audiences, allowed_roles
+                ):
                     abort(401)
 
-                return f(*args, **kwargs)
+                return func(*args, **kwargs)
+
             return decorated
+
         return requires_token_wrapper
 
     def _perform_verification(self, token, audiences, allowed_roles):
         verified, payload, account_id, roles = verify_token(
-                token, self.secret, self.issuer, request.method, audiences, allowed_roles)
+            token,
+            self.secret,
+            self.issuer,
+            request.method,
+            audiences,
+            allowed_roles,
+        )
         if not verified:
             return False
 
@@ -147,7 +173,7 @@ class JWTAuth(BasicAuth):
         return True
 
 
-requires_token = JWTAuth().requires_token
+requires_token = JWTAuth().requires_token  # pylint: disable=invalid-name
 
 
 def set_authen_claims(claims):
@@ -170,7 +196,7 @@ def get_authen_claims():
     return g.get(AUTHEN_CLAIMS, {})
 
 
-def set_authen_roles(roles=[]):
+def set_authen_roles(roles=None):
     """
     Get the authentication roles
 

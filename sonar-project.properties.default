@@ -1,0 +1,13 @@
+sonar.projectKey=eve-auth-jwt:master
+sonar.projectName=eve-auth-jwt
+sonar.language=py
+sonar.sourceEncoding=UTF-8
+sonar.sources=.
+
+# Unit tests
+sonar.python.codeCoveragePlugin=cobertura
+sonar.python.coverage.reportPath=reports/coverage.xml
+sonar.python.xunit.reportPath=reports/report_unit_tests.xml
+
+# The version is computed when the build is made
+# sonar.projectVersion=$(git rev-parse --short HEAD)

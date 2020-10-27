@@ -1,0 +1,9 @@
+bandit == 1.5.0
+black == 18.9b0
+isort == 4.3.4
+pylint == 2.3.0
+pytest == 3.8.2
+pytest-cov == 2.6.0
+xenon == 0.5.5
+mock  == 3.0.5
+requests-mock == 1.6.0
