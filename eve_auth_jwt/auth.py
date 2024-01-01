@@ -78,8 +78,11 @@ class JWTAuth(BasicAuth):
             realm = 'Bearer realm="%s", error="invalid_token"' % __package__
         else:
             realm = 'Bearer realm="%s"' % __package__
-        resp = Response(None, 401, {'WWW-Authenticate': realm})
-        abort(401, description='Please provide proper credentials', response=resp)
+        abort(
+            401,
+            description='Please provide proper credentials',
+            www_authenticate=('WWW-Authenticate', realm),
+        )
 
     def check_token(self, token, allowed_roles, resource, method):
         """
